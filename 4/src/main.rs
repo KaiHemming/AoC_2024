@@ -145,6 +145,7 @@ fn part2() {
                     }
                     if (vals[val_rows][val_cols] == "X") | (vals[val_rows][val_cols] == "A") {
                         is_valid = false;
+                        break;
                     }
                     // one not in same row or one not in same column
                     let mut other_row = 0;
@@ -153,10 +154,11 @@ fn part2() {
                         other_row = 1;
                     }
                     if val_cols == 0 {
-                        other_col == 1;
+                        other_col = 1;
                     }
                     if (vals[val_rows][val_cols] == "M") & !((vals[other_row][val_cols] == "M") | (vals[val_rows][other_col] == "M")) {
                         is_valid = false;
+                        break;
                     }
                 }
             }
