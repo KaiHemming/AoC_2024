@@ -3,4 +3,5 @@ target/
 **/*.rs.bk
 *.pdb
 input
+input.txt
 *_example.rs
