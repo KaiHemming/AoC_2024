@@ -1,7 +1,8 @@
 const INPUT: &str = include_str!(".././input");
 
+// 6421696307963
 fn main() {
-   part1();
+   part2();
 }
 fn part1() {
     let mut last_file_num:i32 = 0;
@@ -44,4 +45,57 @@ fn part1() {
 
 
 fn part2() {
+    let mut last_file_num:i32 = 0;
+    let mut disk:Vec<(i32,i32)> = vec![];
+    INPUT.trim().chars()
+        .enumerate()
+        .for_each(|(index, char)| {
+            if index % 2 == 0 { 
+                disk.push((last_file_num, char.to_digit(10).expect("") as i32));
+                last_file_num += 1;
+            } else {
+                disk.push((-1, char.to_digit(10).expect("") as i32));
+            }
+        });
+    // println!("{:?}", disk);
+    for i in 0..disk.len() {
+        // println!("{:?}", disk);
+        if disk[i].0 < 0 {
+            let size_to_fill = disk[i].1;
+            // In free space
+            for j in (i+1..disk.len()).rev() {
+                if (disk[j].0 > 0) &
+                    (disk[j].1 <= size_to_fill) {
+                    let size_remaining = size_to_fill - disk[j].1;
+                    disk[i] = disk[j];
+                    disk[j] = (-1, disk[i].1);
+                    if size_remaining > 0 {
+                        if disk[i+1].0 < 0 {
+                            disk[i+1].1 += size_remaining;
+                        } else {
+                            disk.insert(i+1, (-1, size_remaining));
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    let mut cur_index = 0;
+    let mut total:i64 = 0;
+    // for k in 0..j+1 {
+    //     total += disk[k] as i64 * k as i64;
+    // }
+    for pair in disk {
+        if pair.0 != -1 {
+            for i in 0..pair.1 {
+                total += pair.0 as i64 * cur_index as i64;
+                cur_index += 1;
+            }
+        }
+        else {
+            cur_index += pair.1;
+        }
+    }
+    println!("{}", total);
 }
