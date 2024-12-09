@@ -1,6 +1,6 @@
-const INPUT: &str = include_str!(".././input");
+const INPUT: &str = include_str!(".././testinput");
 
-// 6421696307963
+// 6421696307963 too low
 fn main() {
    part2();
 }
@@ -57,9 +57,12 @@ fn part2() {
                 disk.push((-1, char.to_digit(10).expect("") as i32));
             }
         });
-    // println!("{:?}", disk);
-    for i in 0..disk.len() {
-        // println!("{:?}", disk);
+    println!("{:?}", disk);
+    for i in 0..disk.len()-1 {
+        println!("{:?}", disk);
+        if i == disk.len()-1 {
+            break;
+        }
         if disk[i].0 < 0 {
             let size_to_fill = disk[i].1;
             // In free space
@@ -69,6 +72,51 @@ fn part2() {
                     let size_remaining = size_to_fill - disk[j].1;
                     disk[i] = disk[j];
                     disk[j] = (-1, disk[i].1);
+
+                    if disk[j-1].0 < 0 {
+                        disk[j].1 += disk[j-1].1;
+                        disk.remove(j-1);
+                        if j < disk.len() {
+                            println!("{:?}", disk[j]);
+                            if disk[j].0 < 0 {
+                                disk[j-1].1 += disk[j].1;
+                                disk.remove(j);
+                            }
+                        }
+                    }
+                    else if j+1 < disk.len() {
+                        if disk[j+1].0 < 0 {
+                            disk[j].1 += disk[j+1].1;
+                            disk.remove(j+1);
+                        }
+                    }
+
+                    // if disk[j-1].0 < 0 {
+                    //     if j+1 < disk.len() {
+                    //         if disk[j+1].0 < 0 {
+                    //             let space_total = disk[i].1 + disk[j-1].1 + disk[j+1].1;
+                    //             disk.remove(j-1);
+                    //             disk.remove(j);
+                    //             disk[j-1] = (-1, space_total);
+                    //         }
+                    //     }
+                    //     else {
+                    //         let space_total = disk[i].1 + disk[j-1].1;
+                    //         disk[j].1 = space_total;
+                    //         disk.remove(j-1);
+                    //     }
+                    // }
+                    // else if j+1 < disk.len() {
+                    //     if disk[j+1].0 < 0 {
+                    //         let space_total = disk[i].1 + disk[j+1].1;
+                    //         disk.remove(j+1);
+                    //         disk[j].1 = space_total;
+                    //     }
+                    // }
+                    // else {
+                    //     disk[j] = (-1, disk[i].1);
+                    // }
+
                     if size_remaining > 0 {
                         if disk[i+1].0 < 0 {
                             disk[i+1].1 += size_remaining;
