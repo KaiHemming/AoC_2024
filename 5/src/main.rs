@@ -9,7 +9,7 @@ fn main() {
 // HashMap of <Number, Numbers to come after>
 fn part1() {
     let mut rules: HashMap<i32,Vec<i32>> = HashMap::<i32,Vec<i32>>::new();
-    let regex_rules = Regex::new(r"\d+\|\d+").unwrap();
+    let regex_rules = Regex::new(r"\d+\|\d+").unwrap(); // For next time: brackets around what is captured!
 
     let mut last_match = 0;
     for capture in regex_rules.captures_iter(INPUT) {
