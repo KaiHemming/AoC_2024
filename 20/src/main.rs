@@ -34,7 +34,6 @@ fn main() {
     let mut prev_pos: (usize, usize) = start;
     let mut cur_pos = start;
     let movement: [(i32, i32); 4] = [(0,1), (0,-1), (1,0), (-1,0)];
-    println!("{:?}", start);
     track.push(start);
 
     // Create track
@@ -66,10 +65,12 @@ fn main() {
     println!("{} picoseconds", track.len()-1);
 
     let cheat_movements: [(i32, i32); 4] = [(0,2), (0,-2), (2,0), (-2,0)];
-    let mut cheats: HashMap<usize, usize> = HashMap::new();
+    let mut cheats_part_1: HashMap<usize, usize> = HashMap::new();
+    let mut cheats_part_2: HashMap<usize, usize> = HashMap::new();
     for i in 0..track.len()-3 {
+        let pos = track[i];
+        // Part 1 
         for cheat_movement in cheat_movements {
-            let pos = track[i];
             let row = (pos.0 as i32 + cheat_movement.0) as usize;
             let col = (pos.1 as i32 + cheat_movement.1) as usize;
 
@@ -80,23 +81,52 @@ fn main() {
             let search = track[i+3..track.len()].iter().position(|x| x == &(row,col));
             if search.is_some() {
                 let picoseconds_saved = search.unwrap()+1;
-                if cheats.contains_key(&picoseconds_saved) {
-                    println!("Pos: {:?} Cheat Pos: {:?} Saved: {:?}", pos, (row,col), picoseconds_saved);
-                    cheats.insert(picoseconds_saved, cheats.get(&picoseconds_saved).unwrap() + 1);
+                if cheats_part_1.contains_key(&picoseconds_saved) {
+                    // println!("Pos: {:?} Cheat Pos: {:?} Saved: {:?}", pos, (row,col), picoseconds_saved);
+                    cheats_part_1.insert(picoseconds_saved, cheats_part_1.get(&picoseconds_saved).unwrap() + 1);
                 } else {
-                    println!("Pos: {:?} Cheat Pos: {:?} Saved: {:?}", pos, (row,col), picoseconds_saved);
-                    cheats.insert(picoseconds_saved, 1);
+                    // println!("Pos: {:?} Cheat Pos: {:?} Saved: {:?}", pos, (row,col), picoseconds_saved);
+                    cheats_part_1.insert(picoseconds_saved, 1);
+                }
+            }
+        }
+        // Part 2
+        // if orthogonal distance <= 20 saving at least 100 picoseconds
+        if i >= track.len() { continue; }
+        for j in i+3..track.len() {
+            let dist_x = (track[j].0 as i32 - pos.0 as i32).abs() as usize;
+            let dist_y = (track[j].1 as i32 - pos.1 as i32).abs() as usize;
+            let ortho_dist = dist_x + dist_y;
+
+            if ortho_dist > 20 {
+                continue;
+            }
+
+            let track_dist = j - i;
+            let picoseconds_saved = track_dist - ortho_dist;
+
+            if picoseconds_saved >= 100 {
+                // println!("Pos: {:?} Cheat Pos: {:?} Dist: {} Track dist: {} Saved: {}", pos, track[j], ortho_dist, track_dist, picoseconds_saved);
+                if cheats_part_2.contains_key(&picoseconds_saved) {
+                    cheats_part_2.insert(picoseconds_saved, cheats_part_2.get(&picoseconds_saved).unwrap() + 1);
+                } else {
+                    cheats_part_2.insert(picoseconds_saved, 1);
                 }
             }
         }
     }
     let mut num_cheats_greaterorequal_100 = 0;
-    println!("{:?}", cheats);
-    for cheat in cheats {
+    for cheat in cheats_part_1 {
         println!("Picoseconds: {} found cheat(s): {}", cheat.0, cheat.1);
         if cheat.0 >= 100 {
             num_cheats_greaterorequal_100 += cheat.1;
         }
     }
     println!("{}", num_cheats_greaterorequal_100);
+    let mut total_part_2 = 0;
+    for cheat in cheats_part_2 {
+        println!("Picoseconds: {} found cheat(s): {}", cheat.0, cheat.1);
+        total_part_2 += cheat.1;
+    }
+    println!("{}", total_part_2);
 }
