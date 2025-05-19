@@ -2,17 +2,24 @@ const INPUT: &str = include_str!(".././input");
 use std::collections::HashMap;
 use std::time::Instant;
 use std::time::Duration;
+#[repr(C)]
 
 fn main() {
+    // find_best_def_expensive();
+
+    // println!("{}",just_mem(2));
+
     for i in 0..255 {
         let start = Instant::now();
         // let stones = part2(i);
-        let stones = part3(i, 20);
+        // let stones = part3(i, 170141183460469231731687303715884105728); //Most significant bit
+        // let stones = part3(i, 85070591730234615865843651857942052864); // Second most significant bit
+        // let stones = part3(i, 10^22);
+        let stones = just_mem(i, 170141183460469231731687303715884105728);
         let elapsed = start.elapsed();
 
         println!("{}, {:?}, {}", i, elapsed, stones);
     }
-    // find_best_def_expensive();
 }
 
 fn find_best_def_expensive() {
@@ -22,13 +29,14 @@ fn find_best_def_expensive() {
         let mut total_elapsed:Duration = Duration::ZERO;
         for j in 0..3 {
             let start = Instant::now();
-            let stones = part3(100, i);
+            let stones = part3(208, 10^i);
             let elapsed = start.elapsed();
             total_elapsed += elapsed;
         }
 
         if total_elapsed/3 < cur_time {
             best = i;
+            cur_time = total_elapsed/3
         }
         println!("{}, {:?}", i, total_elapsed/3);
     }
@@ -120,10 +128,9 @@ struct Result {
     pebble_2: u128
 }
 
-fn part3(blinks: u8, digits: u128) -> u128 {
+fn part3(blinks: u8, limit: u128) -> u128 {
     let mut stones:HashMap<u128,u128> = HashMap::<u128,u128>::new();
     let mut cache:HashMap<u128, Result> =  HashMap::<u128, Result>::new();
-    let limit = 10 ^ digits;
 
     INPUT.trim()
         .split(" ")
@@ -134,6 +141,10 @@ fn part3(blinks: u8, digits: u128) -> u128 {
     for _i in 0..blinks {
         let mut new_stones:HashMap<u128,u128> = HashMap::<u128,u128>::new();
         for (key, value) in &stones {
+            if *key == 0 {
+                add_stone(&mut new_stones, 1, *value);
+                continue;
+            }
             if *key > limit {
                 if cache.contains_key(key) {
                     let result: &Result = cache.get(&key).unwrap();
@@ -145,17 +156,21 @@ fn part3(blinks: u8, digits: u128) -> u128 {
                     }
                     continue;
                 }
-            }
-            if *key == 0 {
-                add_stone(&mut new_stones, 1, *value);
+                if get_num_digits(key)%2 == 0 {
+                    let new_digits = split_digit(key);
+                    add_stone(&mut new_stones, new_digits.0, *value);
+                    add_stone(&mut new_stones, new_digits.1, *value);
+                    cache.insert(*key, Result{is_split: true, pebble_1: new_digits.0, pebble_2: new_digits.1});
+                    continue;
+                }
+                let new_stone = *key*2024;
+                add_stone(&mut new_stones, new_stone, *value);
+                cache.insert(*key, Result {is_split: false, pebble_1: new_stone, pebble_2:0});
             }
             else if get_num_digits(key)%2 == 0 {
                 let new_digits = split_digit(key);
                 add_stone(&mut new_stones, new_digits.0, *value);
                 add_stone(&mut new_stones, new_digits.1, *value);
-                if *key > limit {
-                    cache.insert(*key, Result{is_split: true, pebble_1: new_digits.0, pebble_2: new_digits.1});
-                }
             }
             else {
                 add_stone(&mut new_stones, *key*2024, *value);
@@ -171,7 +186,7 @@ fn part3(blinks: u8, digits: u128) -> u128 {
     return total;
 }
 
-fn just_mem(blinks: u8) -> usize {
+fn just_mem(blinks: u8, limit: u128) -> usize {
     let mut stones:Vec<u128> = INPUT.trim()
         .split(" ")
         .map(|x| x.parse::<u128>().unwrap())
@@ -180,21 +195,42 @@ fn just_mem(blinks: u8) -> usize {
     for _i in 0..blinks {
         let mut j = 0;
         while j < stones.len() {
-            if cache.contains_key(&stones[j]) {
-                let result: &Result = cache.get(&stones[j]).unwrap();
-                if result.is_split {
-                    stones[j] = result.pebble_1;
-                    stones.insert(j+1, result.pebble_2);
-                    j+=2;
+            if stones[j] == 0 {
+                stones[j] = 1;
+                continue;
+            }
 
-                } else {
-                    stones[j] = result.pebble_1;
+            if stones[j] > limit {
+                if cache.contains_key(&stones[j]) {
+                    let result: &Result = cache.get(&stones[j]).unwrap();
+                    if result.is_split {
+                        stones[j] = result.pebble_1;
+                        stones.insert(j+1, result.pebble_2);
+                        j+=2;
+                        continue;
+                    } else {
+                        stones[j] = result.pebble_1;
+                    }
+                }
+                else if get_num_digits(&stones[j])%2 == 0 {
+                    let key = stones[j];
+                    let new_digits = split_digit(&stones[j]);
+                    stones[j] = new_digits.0;
+                    stones.insert(j+1, new_digits.1);
+                    cache.insert(key, Result{is_split: true, pebble_1: new_digits.0, pebble_2: new_digits.1});
+                    j += 2;
+                    continue;
+                }
+                else {
+                    let key = stones[j];
+                    let mult = stones[j]*2024;
+                    stones[j] = mult;
+                    cache.insert(key, Result{is_split: false, pebble_1: mult, pebble_2: 0});
                 }
             }
-            else if stones[j] == 0 {
-                stones[j] = 1;
-            }
+
             else if get_num_digits(&stones[j])%2 == 0 {
+                let key = stones[j];
                 let new_digits = split_digit(&stones[j]);
                 stones[j] = new_digits.0;
                 stones.insert(j+1, new_digits.1);
@@ -202,10 +238,13 @@ fn just_mem(blinks: u8) -> usize {
                 continue;
             }
             else {
-                stones[j] = stones[j]*2024;
+                let mult = stones[j]*2024;
+                stones[j] = mult;
             }
             j += 1;
         }
+        // println!("{:?}", stones);
     }
+    // println!("{:?}", stones);
     return stones.len();
 }
