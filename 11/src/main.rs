@@ -2,7 +2,7 @@ const INPUT: &str = include_str!(".././input");
 use std::collections::HashMap;
 use std::time::Instant;
 use std::time::Duration;
-#[repr(C)]
+use fxhash::{FxBuildHasher, FxHashMap};
 
 fn main() {
     // find_best_def_expensive();
@@ -11,37 +11,40 @@ fn main() {
 
     for i in 0..255 {
         let start = Instant::now();
-        // let stones = part2(i);
-        // let stones = part3(i, 170141183460469231731687303715884105728); //Most significant bit
-        // let stones = part3(i, 85070591730234615865843651857942052864); // Second most significant bit
-        // let stones = part3(i, 10^22);
-        let stones = just_mem(i, 170141183460469231731687303715884105728);
+    //     // let stones = part2(i);
+    //     // let stones = part3(i, 170141183460469231731687303715884105728); //Most significant bit
+    //     // let stones = part3(i, 85070591730234615865843651857942052864); // Second most significant bit
+    //     // let stones = part3(i, 10^22);
+            let stones = just_mem_recursive(i);
+    //     let stones = just_mem(i, 10^22);
         let elapsed = start.elapsed();
 
         println!("{}, {:?}, {}", i, elapsed, stones);
     }
+
+    println!("{}", just_mem_recursive(25));
 }
 
-fn find_best_def_expensive() {
-    let mut cur_time: Duration = Duration::MAX;
-    let mut best:u128 = 0;
-    for i in 6..39 {
-        let mut total_elapsed:Duration = Duration::ZERO;
-        for j in 0..3 {
-            let start = Instant::now();
-            let stones = part3(208, 10^i);
-            let elapsed = start.elapsed();
-            total_elapsed += elapsed;
-        }
+// fn find_best_def_expensive() {
+//     let mut cur_time: Duration = Duration::MAX;
+//     let mut best:u8 = 0;
+//     for i in 2..25 {
+//         let mut total_elapsed:Duration = Duration::ZERO;
+//         for j in 0..3 {
+//             let start = Instant::now();
+//             let stones = just_mem_recursive(75, i);
+//             let elapsed = start.elapsed();
+//             total_elapsed += elapsed;
+//         }
 
-        if total_elapsed/3 < cur_time {
-            best = i;
-            cur_time = total_elapsed/3
-        }
-        println!("{}, {:?}", i, total_elapsed/3);
-    }
-    println!("Best: {}", best);
-}
+//         if total_elapsed/3 < cur_time {
+//             best = i;
+//             cur_time = total_elapsed/3
+//         }
+//         println!("{}, {:?}", i, total_elapsed/3);
+//     }
+//     println!("Best: {}", best);
+// }
 
 fn part1(blinks: u8) -> usize {
     let mut stones:Vec<u128> = INPUT.trim()
@@ -247,4 +250,56 @@ fn just_mem(blinks: u8, limit: u128) -> usize {
     }
     // println!("{:?}", stones);
     return stones.len();
+}
+
+fn just_mem_recursive(blinks: u8) -> u128 {
+    let mut stones:HashMap<u128,u128> = HashMap::<u128,u128>::new();
+    let mut cache:HashMap<(u8, u128), u128> =  HashMap::<(u8, u128), u128>::new();
+
+    INPUT.trim()
+        .split(" ")
+        .for_each(|x| {
+            let num = x.parse::<u128>().unwrap();
+            add_stone(&mut stones, num, 1);
+        });
+
+    let mut total: u128 = 0;
+    for (key, value) in &stones {
+        total += get_descendants(*key, *value, blinks, &mut cache);
+    }
+    return total;
+}
+
+fn get_descendants<'a>(stone: u128, num_stones: u128, iterations: u8, cache: &'a mut HashMap::<(u8, u128), u128>) -> u128 {
+    if iterations <= 0 {
+        cache.insert((iterations, stone), num_stones);
+        return num_stones;
+    }
+    
+    let cache_condition = iterations > 4;
+
+    if cache_condition {
+        if cache.contains_key(&(iterations, stone)) {
+            return *cache.get(&(iterations, stone)).unwrap();
+        }
+    }
+
+    let count:u128;
+
+    if stone == 0 {
+        count = get_descendants(1, num_stones, iterations-1, cache);
+    }
+    else if get_num_digits(&stone)%2 == 0 {
+        let new_digits = split_digit(&stone);
+        count = get_descendants(new_digits.0, num_stones, iterations-1, cache) +
+            get_descendants(new_digits.1, num_stones, iterations-1, cache);
+    }
+    else {
+        let new_stone = stone*2024;
+        count = get_descendants(stone*2024, num_stones, iterations-1, cache);
+    }
+    if cache_condition {
+        cache.insert((iterations, stone), count);
+    }
+    return count;
 }
